@@ -32,7 +32,7 @@ const defaultState: AppState = {
  * Without this, a context lacking `triggerRules` used to white-screen the Dashboard
  * (`for (const rule of ctx.triggerRules)` threw on undefined).
  */
-function normalizeContext(raw: unknown): ContextItem | null {
+export function normalizeContext(raw: unknown): ContextItem | null {
   if (!raw || typeof raw !== 'object') return null;
   const candidate = raw as Partial<ContextItem>;
   return {

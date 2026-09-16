@@ -7,7 +7,17 @@ import {
   BarChart3,
   Plane,
   Plus,
+  X,
 } from 'lucide-react';
+
+interface TemplateMarketProps {
+  /**
+   * When provided the market is shown as a modal (closable) instead of the
+   * first-run full-page gate. Without it the market is only reachable while the
+   * dashboard has zero contexts — which used to make it unreachable forever.
+   */
+  onClose?: () => void;
+}
 
 interface Template {
   id: string;
@@ -83,7 +93,8 @@ function resolveIconName(icon: unknown): string {
   return typeof candidate === 'string' && candidate ? candidate.toLowerCase() : 'icon';
 }
 
-export function TemplateMarket() {  const { dispatch } = useStore();
+export function TemplateMarket({ onClose }: TemplateMarketProps = {}) {
+  const { dispatch } = useStore();
 
   const useTemplate = (template: Template) => {
     const cards: CardData[] = template.cards.map((c) => ({
@@ -108,6 +119,7 @@ export function TemplateMarket() {  const { dispatch } = useStore();
     dispatch({ type: 'ADD_CONTEXT', payload: context });
     dispatch({ type: 'SET_ACTIVE_CONTEXT', payload: context.id });
     dispatch({ type: 'SET_SEEN_TEMPLATE', payload: true });
+    onClose?.();
   };
 
   const createBlank = () => {
@@ -122,21 +134,23 @@ export function TemplateMarket() {  const { dispatch } = useStore();
     dispatch({ type: 'ADD_CONTEXT', payload: context });
     dispatch({ type: 'SET_ACTIVE_CONTEXT', payload: context.id });
     dispatch({ type: 'SET_SEEN_TEMPLATE', payload: true });
+    onClose?.();
   };
 
   const skipTemplate = () => {
     dispatch({ type: 'SET_SEEN_TEMPLATE', payload: true });
   };
 
-  return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center p-6">
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-12">
-          <h1 className="text-page-title mb-2">Choose a template to get started</h1>
-          <p className="text-body text-ink-secondary">
-            Or create a blank context and build from scratch
-          </p>
-        </div>
+  const body = (
+    <>
+      <div className="text-center mb-12">
+        <h1 className={onClose ? 'text-context-title mb-2' : 'text-page-title mb-2'}>
+          {onClose ? 'Start a new context from a template' : 'Choose a template to get started'}
+        </h1>
+        <p className="text-body text-ink-secondary">
+          Or create a blank context and build from scratch
+        </p>
+      </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {templates.map((template) => {
@@ -179,8 +193,10 @@ export function TemplateMarket() {  const { dispatch } = useStore();
               Create Blank
             </button>
           </div>
-        </div>
+      </div>
 
+      {/* Only meaningful on the first-run page; the modal has its own close button. */}
+      {!onClose && (
         <div className="text-center">
           <button
             onClick={skipTemplate}
@@ -188,6 +204,34 @@ export function TemplateMarket() {  const { dispatch } = useStore();
           >
             Skip and create from scratch later
           </button>
+        </div>
+      )}
+    </>
+  );
+
+  if (!onClose) {
+    return (
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full">{body}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-auto bg-black/20" onClick={onClose}>
+      <div className="min-h-full flex items-center justify-center p-6">
+        <div
+          className="relative w-full max-w-4xl bg-surface border border-line rounded-card shadow-pop p-8 animate-pop-in"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 text-ink-tertiary hover:text-ink transition-colors"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+          {body}
         </div>
       </div>
     </div>

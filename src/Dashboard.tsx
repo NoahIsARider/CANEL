@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent } from 'react';
 import { useStore, useActiveContext, cleanupCardStorage } from './store';
 import { ContextTabBar } from './components/ContextTabBar';
 import { CardGrid } from './components/CardGrid';
@@ -7,16 +7,18 @@ import { CardConfigModal } from './components/CardConfigModal';
 import { AddCardPanel } from './components/AddCardPanel';
 import { TemplateMarket } from './components/TemplateMarket';
 import { UserMenu } from './components/UserMenu';
-import { Toast } from './components/Toast';
+import { Toast, showToast } from './components/Toast';
+import { exportAll, parseImportFile, forkContexts } from './exportImport';
 import type { CardData, CardType } from './types';
 import { uid } from './utils';
-import { Settings } from 'lucide-react';
+import { Settings, Download, Upload } from 'lucide-react';
 
 export function Dashboard() {
   const { state, dispatch } = useStore();
   const activeContext = useActiveContext();
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTemplateMarket, setShowTemplateMarket] = useState(false);
   const [editingCard, setEditingCard] = useState<CardData | null>(null);
   const [switchKey, setSwitchKey] = useState(0);
   const prevContextRef = useRef<string | null>(state.activeContextId);
@@ -112,7 +114,9 @@ export function Dashboard() {
     });
   };
 
-  // Show template market if no contexts
+  // Show the template market as the first-run gate only when there is nothing yet.
+  // Every other entry point (new-context menu, "Create Context" button) opens it as a
+  // modal — otherwise it became unreachable as soon as the first context existed.
   if (state.contexts.length === 0 && !state.hasSeenTemplate) {
     return <TemplateMarket />;
   }
@@ -124,7 +128,7 @@ export function Dashboard() {
         <div className="flex items-center gap-2">
           <span className="text-card-title font-semibold text-ink">CANEL</span>
         </div>
-        <ContextTabBar />
+        <ContextTabBar onNewFromTemplate={() => setShowTemplateMarket(true)} />
         <UserMenu />
       </header>
 
@@ -144,7 +148,7 @@ export function Dashboard() {
             <div className="text-center">
               <p className="text-ink-secondary mb-4">No active context</p>
               <button
-                onClick={() => setShowAddPanel(true)}
+                onClick={() => setShowTemplateMarket(true)}
                 className="px-4 py-2 bg-brand text-white rounded-card text-card-title hover:bg-brand-hover transition-colors"
               >
                 Create Context
@@ -180,6 +184,10 @@ export function Dashboard() {
         <SettingsModal onClose={() => setShowSettings(false)} />
       )}
 
+      {showTemplateMarket && (
+        <TemplateMarket onClose={() => setShowTemplateMarket(false)} />
+      )}
+
       <Toast />
     </div>
   );
@@ -187,6 +195,45 @@ export function Dashboard() {
 
 function SettingsModal({ onClose }: { onClose: () => void }) {
   const { state, dispatch } = useStore();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleExportAll = () => {
+    if (state.contexts.length === 0) {
+      showToast('Nothing to export yet.', 'error');
+      return;
+    }
+    exportAll(state.contexts);
+    showToast(
+      `Exported ${state.contexts.length} context${state.contexts.length === 1 ? '' : 's'} to JSON.`,
+      'success'
+    );
+  };
+
+  const handleImportFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so picking the same file twice still fires a change event.
+    e.target.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = parseImportFile(String(reader.result ?? ''));
+      if (!result.ok || !result.contexts) {
+        showToast(`Import failed: ${result.error ?? 'invalid file'}.`, 'error');
+        return;
+      }
+      // Imports are always added as *new* contexts — existing data is never replaced.
+      const imported = forkContexts(result.contexts, result.cardData);
+      imported.forEach((ctx) => dispatch({ type: 'ADD_CONTEXT', payload: ctx }));
+      dispatch({ type: 'SET_ACTIVE_CONTEXT', payload: imported[0].id });
+      showToast(
+        `Imported ${imported.length} context${imported.length === 1 ? '' : 's'} as new. Your existing contexts are unchanged.`,
+        'success'
+      );
+    };
+    reader.onerror = () => showToast('Import failed: the file could not be read.', 'error');
+    reader.readAsText(file);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20" onClick={onClose}>
@@ -228,6 +275,39 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             <p className="text-caption text-ink-secondary">
               {state.contexts.length} / 5 contexts (Free plan limit)
             </p>
+          </div>
+
+          {/* Import / export */}
+          <div>
+            <label className="block text-card-title mb-2">Data</label>
+            <p className="text-caption text-ink-secondary mb-3">
+              Everything lives in this browser. Export files contain your personal content
+              (todos and notes) — review them before sharing.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportAll}
+                className="flex items-center gap-2 px-4 py-2 rounded-card border border-line hover:border-brand-border transition-colors"
+              >
+                <Download size={14} />
+                <span>Export all</span>
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 rounded-card border border-line hover:border-brand-border transition-colors"
+              >
+                <Upload size={14} />
+                <span>Import</span>
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                data-testid="import-file-input"
+                onChange={handleImportFile}
+              />
+            </div>
           </div>
         </div>
       </div>
