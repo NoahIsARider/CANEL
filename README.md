@@ -76,7 +76,7 @@ Useful scripts:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PORT` | `5000` | Port the Express server listens on (dev and prod) |
-| `COZE_PROJECT_ENV` | *(unset = dev)* | Set to `PROD` to serve `dist/` instead of running Vite middleware |
+| `COZE_PROJECT_ENV` | `PROD` for `pnpm start`; otherwise dev | Any value other than `PROD` makes the server run Vite middleware (dev path) instead of serving `dist/` |
 | `VITE_HMR_PATH` | Vite default | Override the HMR socket path (only needed behind a reverse proxy) |
 | `VITE_HMR_PORT` | Vite default | Override the HMR socket port |
 | `VITE_HMR_CLIENT_PORT` | Vite default | Override the port the browser dials for HMR |
