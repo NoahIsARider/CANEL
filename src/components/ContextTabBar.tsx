@@ -1,12 +1,16 @@
-import { useStore } from '../store';
-import { Plus, MoreHorizontal, Download, LayoutTemplate } from 'lucide-react';
+import { useStore, cleanupCardStorage } from '../store';
+import { Plus, MoreHorizontal, Download, LayoutTemplate, Trash2 } from 'lucide-react';
 import type { ContextItem } from '../types';
 import { uid } from '../utils';
 import { useEffect, useRef, useState } from 'react';
 import { exportOne } from '../exportImport';
 import { showToast } from './Toast';
 
-type OpenMenu = { kind: 'create' } | { kind: 'context'; id: string } | null;
+/** `confirm` turns the dropdown into an inline "are you sure?" step. */
+type OpenMenu =
+  | { kind: 'create' }
+  | { kind: 'context'; id: string; confirm?: boolean }
+  | null;
 
 interface ContextTabBarProps {
   /** Opens the template picker so a new context can start from a template. */
@@ -57,6 +61,15 @@ export function ContextTabBar({ onNewFromTemplate }: ContextTabBarProps) {
     showToast(`Exported "${ctx.name}". The file contains personal content — review before sharing.`, 'success');
   };
 
+  const handleDeleteOne = (ctx: ContextItem) => {
+    // Drop the per-card todo/note blobs first — `DELETE_CONTEXT` only rewrites AppState,
+    // so without this the removed context would leave orphaned localStorage entries.
+    ctx.cards.forEach((card) => cleanupCardStorage(card.id));
+    dispatch({ type: 'DELETE_CONTEXT', payload: ctx.id });
+    setMenu(null);
+    showToast(`Deleted "${ctx.name}".`, 'success');
+  };
+
   return (
     <div className="flex items-center gap-1" ref={barRef}>
       {state.contexts.map((ctx) => {
@@ -85,7 +98,7 @@ export function ContextTabBar({ onNewFromTemplate }: ContextTabBarProps) {
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface border border-line rounded-card shadow-pop animate-pop-in p-1">
+              <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-surface border border-line rounded-card shadow-pop animate-pop-in p-1">
                 <button
                   onClick={() => handleExportOne(ctx)}
                   className="w-full flex items-center gap-2 px-3 py-2 text-body text-ink hover:bg-canvas rounded-card transition-colors"
@@ -93,6 +106,36 @@ export function ContextTabBar({ onNewFromTemplate }: ContextTabBarProps) {
                   <Download size={14} />
                   <span>Export</span>
                 </button>
+
+                {menu.confirm ? (
+                  <div className="px-3 py-2">
+                    <p className="text-caption text-ink-secondary mb-2">
+                      Delete "{ctx.name}" and its cards?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setMenu(null)}
+                        className="flex-1 px-2 py-1 text-caption border border-line rounded-card hover:bg-canvas transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOne(ctx)}
+                        className="flex-1 px-2 py-1 text-caption border border-red-500/40 text-red-500 rounded-card hover:bg-red-500/10 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setMenu({ kind: 'context', id: ctx.id, confirm: true })}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-body text-ink hover:bg-canvas rounded-card transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
