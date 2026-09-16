@@ -1,9 +1,16 @@
 import { useStore, cleanupCardStorage } from '../store';
-import { Plus, MoreHorizontal, Download, LayoutTemplate, Trash2 } from 'lucide-react';
+import {
+  Plus,
+  MoreHorizontal,
+  Download,
+  Upload,
+  LayoutTemplate,
+  Trash2,
+} from 'lucide-react';
 import type { ContextItem } from '../types';
 import { uid } from '../utils';
-import { useEffect, useRef, useState } from 'react';
-import { exportOne } from '../exportImport';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { exportOne, readImportFile, forkContexts } from '../exportImport';
 import { showToast } from './Toast';
 
 /** `confirm` turns the dropdown into an inline "are you sure?" step. */
@@ -23,6 +30,7 @@ export function ContextTabBar({ onNewFromTemplate }: ContextTabBarProps) {
   const [newName, setNewName] = useState('');
   const [menu, setMenu] = useState<OpenMenu>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
 
   // Close whichever dropdown is open on an outside click.
   useEffect(() => {
@@ -59,6 +67,29 @@ export function ContextTabBar({ onNewFromTemplate }: ContextTabBarProps) {
     exportOne(ctx);
     setMenu(null);
     showToast(`Exported "${ctx.name}". The file contains personal content — review before sharing.`, 'success');
+  };
+
+  const handleImportFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so picking the same file twice still fires a change event.
+    e.target.value = '';
+    if (!file) return;
+
+    const result = await readImportFile(file);
+    if (!result.ok || !result.contexts) {
+      showToast(`Import failed: ${result.error ?? 'invalid file'}.`, 'error');
+      return;
+    }
+    // Imports are always added as *new* contexts — existing data is never replaced.
+    const imported = forkContexts(result.contexts, result.cardData);
+    imported.forEach((ctx) => dispatch({ type: 'ADD_CONTEXT', payload: ctx }));
+    dispatch({ type: 'SET_ACTIVE_CONTEXT', payload: imported[0].id });
+    // An import gives the user real data, so the first-run template gate is satisfied.
+    dispatch({ type: 'SET_SEEN_TEMPLATE', payload: true });
+    showToast(
+      `Imported ${imported.length} context${imported.length === 1 ? '' : 's'} as new. Your existing contexts are unchanged.`,
+      'success'
+    );
   };
 
   const handleDeleteOne = (ctx: ContextItem) => {
@@ -141,6 +172,27 @@ export function ContextTabBar({ onNewFromTemplate }: ContextTabBarProps) {
           </div>
         );
       })}
+
+      {/* Import lives here (top bar) so it is reachable in every state — including
+          the empty state, which used to hide it behind the Settings gear. */}
+      <button
+        onClick={() => importRef.current?.click()}
+        className="ml-2 flex items-center gap-2 px-3 py-1.5 text-caption text-ink-secondary border border-line rounded-card hover:border-brand-border hover:text-ink transition-colors"
+        title="Import contexts from a CANEL JSON export"
+        aria-label="Import contexts from file"
+        data-testid="import-button"
+      >
+        <Upload size={14} />
+        <span>Import</span>
+      </button>
+      <input
+        ref={importRef}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        data-testid="import-file-input"
+        onChange={handleImportFile}
+      />
 
       {showCreate ? (
         <div className="flex items-center gap-2 ml-2">

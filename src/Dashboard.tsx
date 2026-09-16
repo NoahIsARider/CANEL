@@ -8,7 +8,7 @@ import { AddCardPanel } from './components/AddCardPanel';
 import { TemplateMarket } from './components/TemplateMarket';
 import { UserMenu } from './components/UserMenu';
 import { Toast, showToast } from './components/Toast';
-import { exportAll, parseImportFile, forkContexts } from './exportImport';
+import { exportAll, readImportFile, forkContexts } from './exportImport';
 import type { CardData, CardType } from './types';
 import { uid } from './utils';
 import { Settings, Download, Upload } from 'lucide-react';
@@ -209,30 +209,25 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
     );
   };
 
-  const handleImportFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     // Reset so picking the same file twice still fires a change event.
     e.target.value = '';
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = parseImportFile(String(reader.result ?? ''));
-      if (!result.ok || !result.contexts) {
-        showToast(`Import failed: ${result.error ?? 'invalid file'}.`, 'error');
-        return;
-      }
-      // Imports are always added as *new* contexts — existing data is never replaced.
-      const imported = forkContexts(result.contexts, result.cardData);
-      imported.forEach((ctx) => dispatch({ type: 'ADD_CONTEXT', payload: ctx }));
-      dispatch({ type: 'SET_ACTIVE_CONTEXT', payload: imported[0].id });
-      showToast(
-        `Imported ${imported.length} context${imported.length === 1 ? '' : 's'} as new. Your existing contexts are unchanged.`,
-        'success'
-      );
-    };
-    reader.onerror = () => showToast('Import failed: the file could not be read.', 'error');
-    reader.readAsText(file);
+    const result = await readImportFile(file);
+    if (!result.ok || !result.contexts) {
+      showToast(`Import failed: ${result.error ?? 'invalid file'}.`, 'error');
+      return;
+    }
+    // Imports are always added as *new* contexts — existing data is never replaced.
+    const imported = forkContexts(result.contexts, result.cardData);
+    imported.forEach((ctx) => dispatch({ type: 'ADD_CONTEXT', payload: ctx }));
+    dispatch({ type: 'SET_ACTIVE_CONTEXT', payload: imported[0].id });
+    showToast(
+      `Imported ${imported.length} context${imported.length === 1 ? '' : 's'} as new. Your existing contexts are unchanged.`,
+      'success'
+    );
   };
 
   return (
@@ -304,7 +299,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
                 type="file"
                 accept=".json,application/json"
                 className="hidden"
-                data-testid="import-file-input"
+                data-testid="settings-import-file-input"
                 onChange={handleImportFile}
               />
             </div>

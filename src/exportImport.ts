@@ -178,6 +178,19 @@ export function parseImportFile(text: string): ImportResult {
 }
 
 /**
+ * Read an uploaded File and parse it into an ImportResult. Never touches existing state.
+ * Shared by every Import entry point (tab bar + settings) so the rules stay identical.
+ */
+export function readImportFile(file: File): Promise<ImportResult> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(parseImportFile(String(reader.result ?? '')));
+    reader.onerror = () => resolve({ ok: false, error: 'the file could not be read' });
+    reader.readAsText(file);
+  });
+}
+
+/**
  * Deep-copy imported contexts with brand-new ids (context + every card) so an import
  * can never overwrite or collide with existing data. Card blobs are re-keyed too.
  */
