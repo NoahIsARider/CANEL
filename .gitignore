@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-server/
+build/
+out/
+*.tsbuildinfo
+
+# Environment / secrets — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs & runtime state
+logs/
+*.log
+*.log.*
+pids
+*.pid
+*.pid.lock
+
+# Tooling caches
+.cache/
+.vite/
+.turbo/
+.eslintcache
+.stylelintcache
+coverage/
+*.lcov
+.nyc_output/
+coze-logs/
+.coze-logs
+.cozeproj/reduction
+.codegraph/
+
+# OS / editor
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+*.swp
+*.swo
+*.suo
+*.sln
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.iml

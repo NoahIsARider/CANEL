@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-canvas: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --border-line: #E4E4E7;
+  --border-dashed: #D4D4D8;
+  --border-dashed-active: #A1A1AA;
+  --text-primary: #18181B;
+  --text-secondary: #71717A;
+  --text-tertiary: #A1A1AA;
+  --accent: #5B6CFF;
+  --accent-hover: #4A5BEB;
+  --accent-soft: rgb(91 108 255 / 8%);
+  --accent-border: rgb(91 108 255 / 20%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 4%);
+  --shadow-card-hover: 0 2px 8px rgb(0 0 0 / 6%);
+  --shadow-pop: 0 4px 24px rgb(0 0 0 / 8%), 0 1px 2px rgb(0 0 0 / 4%);
+  --shadow-drag: 0 8px 32px rgb(0 0 0 / 12%);
+}
+
+.dark {
+  --bg-canvas: #09090B;
+  --bg-surface: #111113;
+  --bg-elevated: #18181B;
+  --border-line: #27272A;
+  --border-dashed: #3F3F46;
+  --border-dashed-active: #52525B;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #71717A;
+  --accent: #7B8AFF;
+  --accent-hover: #6B7CF0;
+  --accent-soft: rgb(123 138 255 / 8%);
+  --accent-border: rgb(123 138 255 / 20%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 20%);
+  --shadow-card-hover: 0 2px 8px rgb(0 0 0 / 30%);
+  --shadow-pop: 0 4px 24px rgb(0 0 0 / 40%), 0 1px 2px rgb(0 0 0 / 20%);
+  --shadow-drag: 0 8px 32px rgb(0 0 0 / 50%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-primary);
+  background-color: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Focus ring */
+input:focus, textarea:focus, select:focus, button:focus-visible {
+  outline: none;
+}
+
+/* Context switch animation */
+.context-exit {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.context-enter {
+  animation: fade-up-in 300ms cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Markdown rendering for NoteCard (no @tailwindcss/typography dependency) */
+.note-markdown {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.note-markdown > * + * {
+  margin-top: 8px;
+}
+.note-markdown h1,
+.note-markdown h2,
+.note-markdown h3,
+.note-markdown h4,
+.note-markdown h5,
+.note-markdown h6 {
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 12px;
+}
+.note-markdown h1 { font-size: 18px; }
+.note-markdown h2 { font-size: 16px; }
+.note-markdown h3 { font-size: 14px; }
+.note-markdown h4,
+.note-markdown h5,
+.note-markdown h6 { font-size: 13px; }
+.note-markdown ul,
+.note-markdown ol {
+  padding-left: 20px;
+}
+.note-markdown ul { list-style: disc; }
+.note-markdown ol { list-style: decimal; }
+.note-markdown li + li { margin-top: 2px; }
+.note-markdown a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.note-markdown blockquote {
+  border-left: 2px solid var(--border-line);
+  padding-left: 10px;
+  color: var(--text-secondary);
+}
+.note-markdown code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.note-markdown pre {
+  background: var(--accent-soft);
+  border: 1px solid var(--border-line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow-x: auto;
+}
+.note-markdown pre code {
+  background: none;
+  padding: 0;
+}
+.note-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--border-line);
+}
+.note-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.note-markdown th,
+.note-markdown td {
+  border: 1px solid var(--border-line);
+  padding: 4px 6px;
+  text-align: left;
+}
+
+/* Card stagger */
+.card-stagger > * {
+  animation: fade-up-in 300ms cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Transitions for theme switch (kept here so selector specificity stays ascending) */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease !important;
+}
+
+.card-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.card-stagger > *:nth-child(2) {
+  animation-delay: 30ms;
+}
+.card-stagger > *:nth-child(3) {
+  animation-delay: 60ms;
+}
+.card-stagger > *:nth-child(4) {
+  animation-delay: 90ms;
+}
+.card-stagger > *:nth-child(5) {
+  animation-delay: 120ms;
+}
+.card-stagger > *:nth-child(6) {
+  animation-delay: 150ms;
+}
+.card-stagger > *:nth-child(7) {
+  animation-delay: 180ms;
+}
+.card-stagger > *:nth-child(8) {
+  animation-delay: 210ms;
+}
+.card-stagger > *:nth-child(9) {
+  animation-delay: 240ms;
+}
+
+@keyframes fade-up-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
