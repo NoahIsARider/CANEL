@@ -12,6 +12,9 @@ const hmrClientPort = process.env.VITE_HMR_CLIENT_PORT
   : undefined;
 
 export default defineConfig({
+  // GitHub Pages project site is served from https://<user>.github.io/CANEL/,
+  // so every emitted asset URL must be prefixed with /CANEL/ or they 404.
+  base: '/CANEL/',
   plugins: [react()],
   server: {
     port,

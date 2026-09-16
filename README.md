@@ -2,6 +2,8 @@
 
 > **C**onnect · **A**ssemble · **N**avigate. Your browser, in context.
 
+**Live demo:** https://noahisarider.github.io/CANEL/ (static build, GitHub Pages — `localStorage` only, no server)
+
 CANEL is a local-first **context-aware dashboard / new-tab app**. Instead of one flat pile of bookmarks, you
 group cards (clock, weather, RSS, todos, notes, URL embeds, web clips) into named **contexts** — "Morning
 Routine", "Deep Work", "Travel Planner" — and switch between them with a click. Everything is rendered
